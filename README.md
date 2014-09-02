@@ -1,9 +1,10 @@
 # HTTP Benchmarking
 
-abi localhost:80/test
+```
+$ abi -url localhost:80/test -n 1000
+```
 
 ## To do
 
 - Concurrency
-- Requests
 - HTTPS
