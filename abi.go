@@ -3,24 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
-	// "github.com/olekukonko/tablewriter"
+	"github.com/olekukonko/tablewriter"
 	"net/http"
+	"os"
+	"strconv"
 	"time"
 )
-
-func start() time.Time {
-	return time.Now()
-}
-
-func end(t time.Time) float64 {
-	return float64(time.Since(t).Nanoseconds())
-}
-
-func request(url string) (*http.Response, error) {
-	response, err := http.Get(url)
-	defer response.Body.Close()
-	return response, err
-}
 
 type abiConfig struct {
 	url      string
@@ -33,6 +21,32 @@ type abiResult struct {
 	successfulResponses int
 }
 
+func start() time.Time {
+	return time.Now()
+}
+
+func end(t time.Time) float64 {
+	return float64(time.Since(t).Nanoseconds())
+}
+
+func toSeconds(time float64) string {
+	return strconv.FormatFloat(time/1000000000, 'f', 6, 64)
+}
+
+func toMs(time float64) string {
+	return strconv.FormatFloat(time/1000000, 'f', 6, 64)
+}
+
+func toPercent(num int, den int) string {
+	return strconv.FormatFloat(100*float64(num)/float64(den), 'f', 6, 64)
+}
+
+func request(url string) (*http.Response, error) {
+	response, err := http.Get(url)
+	defer response.Body.Close()
+	return response, err
+}
+
 func extractConfig() abiConfig {
 	var config abiConfig
 	config.url = *flag.String("url", "http://localhost:9999/", "URL to request")
@@ -41,7 +55,6 @@ func extractConfig() abiConfig {
 	return config
 }
 
-// Return
 func digestResults(config abiConfig, times []float64, successfulResponses int) abiResult {
 	var result abiResult
 
@@ -58,24 +71,22 @@ func digestResults(config abiConfig, times []float64, successfulResponses int) a
 	return result
 }
 
-func toSeconds(time float64) float64 {
-	return time / 1000000000
-}
-
-func toMs(time float64) float64 {
-	return time / 1000000
-}
-
-func toPercent(num int, den int) float64 {
-	return 100 * float64(num) / float64(den)
-}
-
 func presentResults(result abiResult) {
+
+	data := [][]string{
+		[]string{"Total Time (seconds)", toSeconds(result.totalTime)},
+		[]string{"Average Time (ms)", toMs(result.averageTime)},
+	}
+
+	table := tablewriter.NewWriter(os.Stdout)
+
+	for _, v := range data {
+		table.Append(v)
+	}
+
 	fmt.Println("Benchmark Complete")
-	fmt.Printf("Total Time: %.2f s\n", toSeconds(result.totalTime))
-	fmt.Printf("Average Time: %.2f ms\n", toMs(result.averageTime))
-	// fmt.Printf("Requests Succeeded: %.1f%%", toPercent(result.successfulResponses, config.requests))
-	fmt.Printf("\n\n")
+
+	table.Render()
 }
 
 func main() {
