@@ -16,6 +16,7 @@ type abiConfig struct {
 }
 
 type abiResult struct {
+	requests            int
 	totalTime           float64
 	averageTime         float64
 	successfulResponses int
@@ -38,7 +39,8 @@ func toMs(time float64) string {
 }
 
 func toPercent(num int, den int) string {
-	return strconv.FormatFloat(100*float64(num)/float64(den), 'f', 6, 64)
+	percent := strconv.FormatFloat(100*float64(num)/float64(den), 'f', 1, 64)
+	return fmt.Sprintf("%s%%", percent)
 }
 
 func request(url string) (*http.Response, error) {
@@ -58,6 +60,8 @@ func extractConfig() abiConfig {
 func digestResults(config abiConfig, times []float64, successfulResponses int) abiResult {
 	var result abiResult
 
+	result.requests = config.requests
+
 	total := float64(0)
 	for _, time := range times {
 		total += time
@@ -72,10 +76,15 @@ func digestResults(config abiConfig, times []float64, successfulResponses int) a
 }
 
 func presentResults(result abiResult) {
+	requests := result.requests
+	successful := result.successfulResponses
+	failed := requests - successful
 
 	data := [][]string{
 		[]string{"Total Time (seconds)", toSeconds(result.totalTime)},
 		[]string{"Average Time (ms)", toMs(result.averageTime)},
+		[]string{"Completed Requests", fmt.Sprintf("%d (%s)", successful, toPercent(successful, requests))},
+		[]string{"Failed Requests", fmt.Sprintf("%d (%s)", failed, toPercent(successful, requests))},
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
