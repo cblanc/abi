@@ -100,6 +100,9 @@ func main() {
 
 	for i := 0; i < config.requests; i++ {
 		t := start()
+		if i%100 == 0 && i > 0 {
+			fmt.Printf("Completed %d requests\n", i)
+		}
 		response, err := request(config.url)
 		if err == nil && response.StatusCode == 200 {
 			successfulResponses++
